@@ -22,6 +22,9 @@
 
 #include "file-operation.h"
 #include "file-operation-manager.h"
+
+#include "file-operation-error-handler-dialog-2iface.h"
+
 #include <QApplication>
 
 using namespace Peony;
@@ -40,6 +43,13 @@ FileOperation::~FileOperation()
 void FileOperation::run()
 {
 
+}
+
+FileOperationErrorHandlerDialog2Iface *FileOperation::createDialog()
+{
+    //FIXME: need be overrided by subclass
+    auto dlg = new FileOperationErrorHandlerDialog2Iface();
+    return dlg;
 }
 
 void FileOperation::cancel()

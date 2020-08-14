@@ -43,6 +43,8 @@
 
 #include "file-watcher.h"
 
+#include "file-operation-error-handler-dialog-2iface.h"
+
 #include <QDebug>
 
 using namespace Peony;
@@ -177,6 +179,11 @@ void FileOperationManager::startOperation(FileOperation *operation, bool addToHi
    proc->connect(operation, &FileOperation::operationStartSnyc, proc, &ProgressBar::onStartSync);
    proc->connect(operation, &FileOperation::operationFinished, proc, &ProgressBar::onFinished);
    proc->connect(proc, &ProgressBar::cancelled, operation, &Peony::FileOperation::cancel);
+
+   operation->connect(operation, &FileOperation::errored2, this, [=](FileOperation *op){
+       auto dlg = op->createDialog();
+       dlg->handleFileOperationError(op);
+   }, Qt::BlockingQueuedConnection);
 
    operation->connect(operation, &FileOperation::errored, [=]() {
        operation->setHasError(true);

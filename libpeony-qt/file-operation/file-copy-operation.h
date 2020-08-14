@@ -26,6 +26,9 @@
 #include "peony-core_global.h"
 
 #include "file-operation.h"
+#include "file-operation-error-handler-dialog-2iface.h"
+
+class QLineEdit;
 
 namespace Peony {
 
@@ -39,6 +42,9 @@ class FileNode;
  */
 class PEONYCORESHARED_EXPORT FileCopyOperation : public FileOperation
 {
+    friend class CopyErrorDialog0;
+    //...
+
     Q_OBJECT
 public:
     explicit FileCopyOperation(QStringList sourceUris, QString destDirUri, QObject *parent = nullptr);
@@ -48,6 +54,9 @@ public:
     std::shared_ptr<FileOperationInfo> getOperationInfo() override {
         return m_info;
     }
+
+    //Subclass should override this virtual method for new error handling frameworks.
+    FileOperationErrorHandlerDialog2Iface *createDialog() override;
 
 public Q_SLOTS:
     void cancel() override;
@@ -113,6 +122,23 @@ private:
     QHash<int, ResponseType> m_prehandle_hash;
 
     std::shared_ptr<FileOperationInfo> m_info = nullptr;
+
+    int m_current_error_code = -1;
+};
+
+class CopyErrorDialog0 : public FileOperationErrorHandlerDialog2Iface
+{
+    Q_OBJECT
+public:
+    explicit CopyErrorDialog0(QWidget *parent = nullptr);
+
+    void handleFileOperationError(FileOperation *op) override;
+
+    // data cache
+    QString m_new_name;
+
+private:
+    QLineEdit *m_line_edit;
 };
 
 }

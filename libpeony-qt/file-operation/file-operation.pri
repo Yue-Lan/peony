@@ -6,6 +6,7 @@ PKGCONFIG += gio-unix-2.0
 
 HEADERS += \
     $$PWD/file-node.h                           \
+    $$PWD/file-operation-error-handler-dialog-2iface.h \
     $$PWD/file-operation.h                      \
     $$PWD/file-node-reporter.h                  \
     $$PWD/file-link-operation.h                 \
@@ -25,6 +26,7 @@ HEADERS += \
 
 SOURCES += \
     $$PWD/file-node.cpp                         \
+    $$PWD/file-operation-error-handler-dialog-2iface.cpp \
     $$PWD/file-operation.cpp                    \
     $$PWD/file-node-reporter.cpp                \
     $$PWD/file-link-operation.cpp               \

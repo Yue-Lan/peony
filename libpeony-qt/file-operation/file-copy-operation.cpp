@@ -34,6 +34,9 @@
 #include "clipboard-utils.h"
 
 #include <QProcess>
+
+#include <QLineEdit>
+
 #include <QDebug>
 
 using namespace Peony;
@@ -183,6 +186,7 @@ fallback_retry:
             int handle_type = prehandle(err);
             if (handle_type == Other) {
                 qDebug()<<"send error";
+                errored2(this);
                 auto typeData = errored(m_current_src_uri, m_current_dest_dir_uri, errWrapperPtr);
                 qDebug()<<"get return";
                 handle_type = typeData;
@@ -269,6 +273,7 @@ fallback_retry:
             int handle_type = prehandle(err);
             if (handle_type == Other) {
                 qDebug()<<"send error";
+                errored2(this);
                 auto typeData = errored(m_current_src_uri, m_current_dest_dir_uri, errWrapperPtr);
                 qDebug()<<"get return";
                 handle_type = typeData;
@@ -482,9 +487,58 @@ void FileCopyOperation::run()
     //notifyFileWatcherOperationFinished();
 }
 
+FileOperationErrorHandlerDialog2Iface *FileCopyOperation::createDialog()
+{
+    // Before we call createDialog(), there must be an error occured in operation.
+    // What we need to do is specificing a protocol by operation itself, and then let
+    // it's own dialog handle it.
+
+    // Note that m_current_error_code is not a restricted protocol, it could be int,
+    // QString, QObject or others, that will be lot different with previous error handling
+    // frameworks, now it's much more freedom, but you need do more job for extenting them.
+    switch (m_current_error_code) {
+    case -1: {
+        //... a dialog implement
+        return new CopyErrorDialog0;
+        break;
+    }
+    case 0: {
+        //... another dialog implement
+        break;
+    }
+        //...
+    default:
+        break;
+    }
+
+    // the dialog will be executed at UI thread (file operation manager).
+    return new FileOperationErrorHandlerDialog2Iface();
+}
+
 void FileCopyOperation::cancel()
 {
     if (m_reporter)
         m_reporter->cancel();
     FileOperation::cancel();
+}
+
+CopyErrorDialog0::CopyErrorDialog0(QWidget *parent)
+{
+    //init ui
+    m_line_edit = new QLineEdit(this);
+    QHBoxLayout *layout = new QHBoxLayout;
+}
+
+void CopyErrorDialog0::handleFileOperationError(FileOperation *op)
+{
+    if (this->exec()) {
+        m_new_name = m_line_edit->text();
+        auto copyOp = static_cast<FileCopyOperation *>(op);
+        // do something special like
+        // copyOp->m_dest_dir_uri = ...,
+        // or node->...
+    } else {
+        auto copyOp = static_cast<FileCopyOperation *>(op);
+        copyOp->cancel();
+    }
 }

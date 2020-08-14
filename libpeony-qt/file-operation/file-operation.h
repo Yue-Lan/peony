@@ -36,6 +36,8 @@
 
 namespace Peony {
 
+class FileOperationErrorHandlerDialog2Iface;
+
 class FileOperationInfo;
 /*!
  * \brief The FileOperation class
@@ -125,6 +127,8 @@ public:
     bool isCancelled() {
         return m_is_cancelled;
     }
+
+    virtual FileOperationErrorHandlerDialog2Iface *createDialog();
 
 Q_SIGNALS:
     /*!
@@ -308,6 +312,14 @@ Q_SIGNALS:
      * </br>
      */
     void operationFinished();
+
+    /*!
+     * \brief errored2
+     * \param pThis
+     * \details
+     * used by FileOperationErrorHanlderDialog2Iface implement in this class.
+     */
+    void errored2(FileOperation *pThis);
 
 public Q_SLOTS:
     virtual void cancel();
