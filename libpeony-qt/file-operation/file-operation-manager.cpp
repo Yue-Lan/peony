@@ -110,6 +110,22 @@ bool FileOperationManager::isAllowParallel()
 
 void FileOperationManager::startOperation(FileOperation *operation, bool addToHistory)
 {
+    // get current operations
+    QList<FileOperation *> currentOps;
+
+    // get current ops info
+    QList<std::shared_ptr<FileOperationInfo>> currentOpInfos;
+
+    for (auto child : children()) {
+        if (auto op = qobject_cast<FileOperation *>(child)) {
+            currentOps<<op;
+            currentOpInfos<<op->getOperationInfo();
+        }
+    }
+
+    // set operation parent as this manager
+    operation->setParent(this);
+
     QApplication::setQuitOnLastWindowClosed(false);
 
     connect(operation, &FileOperation::operationFinished, this, [=]() {
@@ -131,6 +147,33 @@ void FileOperationManager::startOperation(FileOperation *operation, bool addToHi
     }, Qt::BlockingQueuedConnection);
 
     auto operationInfo = operation->getOperationInfo();
+
+    // check safety
+    if (operationInfo.get()->operationType() == FileOperationInfo::Move ||
+            operationInfo.get()->operationType() == FileOperationInfo::Rename ||
+            operationInfo.get()->operationType() == FileOperationInfo::Trash ||
+            operationInfo.get()->operationType() == FileOperationInfo::Delete)
+    {
+        // do not execute this operation if conflicted with any other operations
+        QStringList allSrcUris;
+        QStringList allDestUris;
+        for (auto opInfo : currentOpInfos) {
+            allSrcUris<<opInfo.get()->sources();
+            auto oppositeInfo = opInfo->getOppositeInfo(opInfo.get());
+            allDestUris<<oppositeInfo->sources();
+        }
+        allSrcUris.removeDuplicates();
+        allDestUris.removeDuplicates();
+
+        for (auto srcUri : operationInfo.get()->sources()) {
+            if (allSrcUris.contains(srcUri) || allDestUris.contains(srcUri) || srcUri == operationInfo->target()) {
+                // not safe, warning and stop the operation.
+                QMessageBox::warning(0, 0, "Operation is not safe");
+                operation->deleteLater();
+                return;
+            }
+        }
+    }
 
     bool allowParallel = m_allow_parallel;
 
